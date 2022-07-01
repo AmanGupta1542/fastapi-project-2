@@ -17,5 +17,5 @@ def get_email_configs(id:int, active_user : Any = Depends(CDepends.get_active_us
     mail_server_settings = MailConfig.filter(MailConfig.id == id).first()
     # return mail_server_settings
     if mail_server_settings is None:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="Not found")
     return mail_server_settings

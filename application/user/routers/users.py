@@ -40,14 +40,12 @@ def logout(current_User: CSchemas.User = Depends(UserO.get_current_active_user))
     return {"status":"success", "message": "logout successful"}
 
 @router.get(
-    "/{user_id}", response_model=CSchemas.User, dependencies=[Depends(CDepends.get_db)]
+    "/profile", response_model=CSchemas.User, dependencies=[Depends(CDepends.get_db)]
 )
-def read_user(user_id: int, current_User: CSchemas.User = Depends(UserO.get_current_active_user)):
-    db_user = UserO.get_user_by_id(user_id)
-    if db_user is None:
+def read_user(current_user: CSchemas.User = Depends(UserO.get_current_active_user)):
+    db_user = UserO.get_user(current_user.email)
+    if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
-    if current_User.id != db_user.id:
-        raise HTTPException(status_code=400, detail="Can't access this user")
     return db_user
 
 @router.post("/register", response_model=CSchemas.User, dependencies=[Depends(CDepends.get_db)])
