@@ -21,14 +21,6 @@ class User(peewee.Model):
     role = peewee.IntegerField()
     class Meta:
         database = db
-
-class Token(peewee.Model):
-    owner = peewee.ForeignKeyField(User, backref="token")
-    token = peewee.CharField(index=True)
-    createdAt = peewee.DateTimeField(default=datetime.now())
-
-    class Meta:
-        database = db
     
 class ResetPasswordToken(peewee.Model):
     owner = peewee.ForeignKeyField(User, on_delete="CASCADE")

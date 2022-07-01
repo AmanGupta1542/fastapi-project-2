@@ -1,4 +1,3 @@
-import os
 from fastapi import Depends, HTTPException, status
 from typing import Union
 from datetime import datetime, timedelta
@@ -56,16 +55,6 @@ def create_access_token(data: dict, expires_delta: Union[timedelta , None] = Non
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, config.settings.secret_key, algorithm=config.settings.algorithm)
     return encoded_jwt
-
-def save_access_token(user, expires_in):
-    access_token = create_access_token(data={"sub": user.email}, expires_delta=expires_in)
-    token = CModel.Token(owner_id = user, token= access_token)
-    token.save()
-    return access_token
-
-
-def get_user_data(user_id: int):
-    return CModel.User.filter(CModel.User.id == user_id).first()
 
 async def get_current_user(token: str = Depends(token_auth_scheme)):
     credentials_exception = HTTPException(

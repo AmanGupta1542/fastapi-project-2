@@ -1,6 +1,3 @@
-from telnetlib import TLS
-from xmlrpc.client import ProtocolError
-from click import password_option
 from pydantic import BaseModel, EmailStr, Field
 import peewee
 from pydantic.utils import GetterDict
