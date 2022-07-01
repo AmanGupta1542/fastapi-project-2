@@ -1,4 +1,3 @@
-import csv
 from fastapi import APIRouter, Depends, HTTPException, Path, status, Body, BackgroundTasks
 from fastapi_mail import FastMail, MessageSchema
 from fastapi.requests import Request
@@ -80,20 +79,21 @@ async def forget_password(request: Request, background_tasks: BackgroundTasks, d
     else:
         try:
             token = UserO.reset_password_token()
+            url = "{}/api/reset-password/{}".format(request.client.host, token)
+            template_data = {"url": url}
             create_token = CModels.ResetPasswordToken(owner = db_user, token= token)
             create_token.save()
             message = MessageSchema(
                 subject="Reset Your Password",
                 recipients=[data.email],  # List of recipients, as many as you can pass 
-                # body="<a href='http://127.0.0.1:8000/api/reset-password/"+token+"'>Click Here</a>",
-                body="{}/api/reset-password/{}".format(request.client.host, token),
-                subtype="html"
+                template_body=template_data,
                 )
             fm = FastMail(config.conf)
-            background_tasks.add_task(fm.send_message,message)
-
+            async def sendMail():
+                await fm.send_message(message, template_name="email.html")
+            background_tasks.add_task(sendMail)
             return {"status": "success", "message": "Reset password link sent to your email"}
-        except: 
+        except:
             return {"status": "error", "message": "Something went wrong"}
 
 @router.patch("/reset-password/{token}")
