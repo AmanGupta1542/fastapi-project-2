@@ -25,13 +25,3 @@ def get_users(skip: int = 0, limit: int = 100, all_users: bool=False):
         return list(User.select())
     else :
         return list(User.select().offset(skip).limit(limit))
-
-@router.patch("/change-password")
-def change_password(passwords: CSchemas.ChangePass, active_user : Any = Depends(CDepends.get_active_user)):
-    is_password = verify_password(passwords.oldPassword, active_user.password)
-    if is_password : 
-        active_user.password = get_password_hash(passwords.newPassword)
-        active_user.save()
-        return {"status": "success", "message": "Password changes successfully"}
-    else:
-        return {"status": "error", "message": "Old password is not correct"}

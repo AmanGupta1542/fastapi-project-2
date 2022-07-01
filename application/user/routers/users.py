@@ -96,3 +96,13 @@ def reset_password(data: CSchemas.ResetPassword, token: str = Path(max_length=24
         user_token.isExpire = True
         user_token.save()
         return {"status": "success", "message": "Password reset successfully"}
+
+@router.patch("/change-password")
+def change_password(passwords: CSchemas.ChangePass, current_User: CSchemas.User = Depends(UserO.get_current_active_user)):
+    is_password = UserO.verify_password(passwords.oldPassword, current_User.password)
+    if is_password : 
+        current_User.password = UserO.get_password_hash(passwords.newPassword)
+        current_User.save()
+        return {"status": "success", "message": "Password changes successfully"}
+    else:
+        return {"status": "error", "message": "Old password is not correct"}
