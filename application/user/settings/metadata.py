@@ -44,12 +44,4 @@ tags_metadata = [
         "name": "Users",
         "description": "Operations with users. The **login** logic is also here.",
     },
-    {
-        "name": "Admin",
-        "description": "Manage all users and other stuff.",
-        "externalDocs": {
-            "description": "Admin external docs",
-            "url": "https://fastapi.tiangolo.com/",
-        },
-    },
 ]

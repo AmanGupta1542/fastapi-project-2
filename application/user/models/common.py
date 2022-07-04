@@ -1,10 +1,13 @@
 from datetime import datetime
-from email.policy import default
-from enum import unique
 import peewee
+
 from ..database.database import db
 
-class User(peewee.Model):
+class BaseModel(peewee.Model):
+    class Meta: 
+        database = db
+
+class User(BaseModel):
     firstName = peewee.CharField(max_length=80)
     lastName = peewee.CharField(max_length=80)
     email = peewee.CharField(unique=True, index=True)
@@ -19,19 +22,15 @@ class User(peewee.Model):
     marketingCampaign = peewee.CharField()
     isActive = peewee.BooleanField(default=True)
     role = peewee.IntegerField()
-    class Meta:
-        database = db
+    createdAt = peewee.DateTimeField(default=datetime.now())
     
-class ResetPasswordToken(peewee.Model):
+class ResetPasswordToken(BaseModel):
     owner = peewee.ForeignKeyField(User, on_delete="CASCADE")
     token = peewee.CharField(index=True)
     createdAt = peewee.DateTimeField(default=datetime.now())
     isExpire = peewee.BooleanField(default=False)
 
-    class Meta:
-        database = db
-
-class MailConfig(peewee.Model):
+class MailConfig(BaseModel):
     username= peewee.CharField()
     password= peewee.CharField()
     fromEmail = peewee.CharField()
@@ -41,15 +40,14 @@ class MailConfig(peewee.Model):
     ssl= peewee.BooleanField()
     use_credentials = peewee.BooleanField()
     validate_certs = peewee.BooleanField()
-    class Meta:
-        database = db
 
-class DatabaseConfig(peewee.Model):
+class DatabaseConfig(BaseModel):
     DBName = peewee.CharField(),
     username = peewee.CharField()
     password = peewee.CharField()
     host = peewee.CharField()
     port = peewee.IntegerField()
 
-    class Meta:
-        database = db
+class TokenBlocklist(BaseModel):
+    token = peewee.CharField()
+    inserted_at = peewee.DateTimeField(default=datetime.now())

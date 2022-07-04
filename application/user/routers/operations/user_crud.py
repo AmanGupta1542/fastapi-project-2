@@ -59,15 +59,19 @@ def create_access_token(data: dict, expires_delta: Union[timedelta , None] = Non
 async def get_current_user(token: str = Depends(token_auth_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail="Invalid token",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
     try:
-        payload = jwt.decode(token.credentials, config.settings.secret_key, algorithms=[config.settings.algorithm])
-        email: str = payload.get("sub")
-        if email is None:
+        if CModel.TokenBlocklist.select().where(CModel.TokenBlocklist.token == token.credentials).count():
+            payload = jwt.decode(token.credentials, config.settings.secret_key, algorithms=[config.settings.algorithm])
+            email: str = payload.get("sub")
+            if email is None:
+                raise credentials_exception
+            token_data = CSchemas.TokenData(email=email)
+        else:
             raise credentials_exception
-        token_data = CSchemas.TokenData(email=email)
     except JWTError:
         raise credentials_exception
     user = get_user(email=token_data.email)

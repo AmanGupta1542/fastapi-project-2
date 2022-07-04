@@ -7,7 +7,7 @@ from .models.common import *
 from .routers import users
 
 database.db.connect()
-database.db.create_tables([User, MailConfig, DatabaseConfig, ResetPasswordToken])
+database.db.create_tables([User,TokenBlocklist, MailConfig, DatabaseConfig, ResetPasswordToken])
 database.db.close()
 
 app = FastAPI(

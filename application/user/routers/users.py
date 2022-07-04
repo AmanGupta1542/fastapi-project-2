@@ -1,11 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Path, status, Body, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Path, status, Body, BackgroundTasks, Request
 from fastapi_mail import FastMail, MessageSchema
 from fastapi.requests import Request
-from typing import List, Union, Any
-from datetime import datetime, timedelta, timezone
-from pydantic import EmailStr
-import pytz
-from pydantic import BaseModel
+from datetime import datetime, timedelta
 
 from ..dependencies import common as CDepends
 from ..schemas import common as CSchemas
@@ -36,8 +32,12 @@ def login(login_data: CSchemas.LoginData = Body()):
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/logout")
-def logout(current_User: CSchemas.User = Depends(UserO.get_current_active_user)):
-    return {"status":"success", "message": "logout successful"}
+def logout(request: Request, current_User: CSchemas.User = Depends(UserO.get_current_active_user)):
+    try:
+        CModels.TokenBlocklist(token=request.headers['Authorization'].split(' ')[-1].strip()).save()
+        return {"status":"success", "message": "logout successful"}
+    except:
+        return {"status":"error", "message": "Internal server error"}
 
 @router.get(
     "/profile", response_model=CSchemas.User, dependencies=[Depends(CDepends.get_db)]
