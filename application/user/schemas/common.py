@@ -1,3 +1,4 @@
+from fastapi import File, UploadFile
 from pydantic import BaseModel, EmailStr, Field
 import peewee
 from pydantic.utils import GetterDict
@@ -41,7 +42,6 @@ class UserCreate(UserBase):
     upline: str
     downline: str
     tree: str
-    kyc: bool
     product : str
     marketingCampaign : str
 
@@ -56,3 +56,4 @@ class User(UserBase):
 class ChangePass(BaseModel):
     oldPassword: str = Field(min_length=6)
     newPassword: str = Field(min_length=6)
+    

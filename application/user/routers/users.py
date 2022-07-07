@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Path, status, Body, BackgroundTasks, Request
+import os
+from fastapi import APIRouter, Depends, HTTPException, Path, status, Body, BackgroundTasks, Request, File, UploadFile
 from fastapi_mail import FastMail, MessageSchema
 from fastapi.requests import Request
 from datetime import datetime, timedelta
+from typing import Union
 
 from ..dependencies import common as CDepends
 from ..schemas import common as CSchemas
@@ -106,3 +108,53 @@ def change_password(passwords: CSchemas.ChangePass, current_User: CSchemas.User 
         return {"status": "success", "message": "Password changes successfully"}
     else:
         return {"status": "error", "message": "Old password is not correct"}
+
+@router.post("/kyc/")
+async def create_upload_file(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    document_name: str,
+    file: Union[UploadFile , None] = File(description="Getting file for kyc verificaiton", default=None),
+    current_User: CSchemas.User = Depends(UserO.get_current_active_user)
+    ):
+    if not file:
+        return {"message": "No upload file sent"}
+    elif not (file.content_type == "image/png" or file.content_type == "image/jpg" or file.content_type == "image/jpeg"):
+        return {"status": "error", "message": "Only jpg, jpeg and png files are accepted."}
+    else:
+        # print(file.content_type)
+        if not os.path.exists('static/'+str(current_User.id)):
+            os.makedirs('static/'+str(current_User.id))
+        with open ('static/'+str(current_User.id)+'/'+file.filename, 'wb+') as user_kyc_file:
+            user_kyc_file.write(file.file.read())
+        db_user = CModels.UserKYC(owner=current_User, KYCDocumentName= document_name, fileName = file.filename)
+        db_user.save()
+
+        try:
+            template_data = {
+                "user": current_User.email
+            }
+            message = MessageSchema(
+                subject="Authenticate user KYC",
+                recipients=[config.settings.admin_email],  # List of recipients, as many as you can pass 
+                template_body=template_data,
+                attachments=[
+                    {
+                        "file": 'static/'+str(current_User.id)+'/'+file.filename,
+                        "headers": {"Content-ID": "<KYC_document>"},
+                        # "mime_type": "image",
+                        # "mime_subtype": "png",
+                    }
+                ],
+                )
+            fm = FastMail(config.conf)
+            async def sendMail():
+                await fm.send_message(message, template_name="auth_kyc.html")
+            background_tasks.add_task(sendMail)
+            print('Email sent')
+            # return {"status": "success", "message": "Reset password link sent to your email"}
+        except:
+            print('Email not sent')
+            # return {"status": "error", "message": "Something went wrong"}
+
+        return {"status":"success", "message":"Document upload successfully", "document_name": file.filename}

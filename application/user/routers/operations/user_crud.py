@@ -64,7 +64,7 @@ async def get_current_user(token: str = Depends(token_auth_scheme)):
     )
     
     try:
-        if CModel.TokenBlocklist.select().where(CModel.TokenBlocklist.token == token.credentials).count():
+        if not CModel.TokenBlocklist.select().where(CModel.TokenBlocklist.token == token.credentials).count():
             payload = jwt.decode(token.credentials, config.settings.secret_key, algorithms=[config.settings.algorithm])
             email: str = payload.get("sub")
             if email is None:
@@ -80,6 +80,7 @@ async def get_current_user(token: str = Depends(token_auth_scheme)):
     return user
 
 async def get_current_active_user(current_user: CSchemas.User = Depends(get_current_user)):
+    print(current_user)
     if not current_user.isActive:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
@@ -96,7 +97,6 @@ def create_user(user: CSchemas.UserCreate):
         upline= user.upline,
         downline= user.downline,
         tree= user.tree,
-        kyc= user.kyc,
         product = user.product,
         marketingCampaign= user.marketingCampaign,
         isActive =0, 
@@ -104,3 +104,12 @@ def create_user(user: CSchemas.UserCreate):
         )
     db_user.save()
     return db_user
+
+# def store_kyc_data(user: CSchemas.UserCreate):
+#     db_user = CModel.UserKYC(
+#         user = user,
+#         document_name = 
+#         document = 
+#         )
+#     db_user.save()
+#     return db_user

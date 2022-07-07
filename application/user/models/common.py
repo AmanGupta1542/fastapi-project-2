@@ -17,7 +17,7 @@ class User(BaseModel):
     upline = peewee.CharField()
     downline = peewee.CharField()
     tree = peewee.CharField()
-    kyc = peewee.BooleanField()
+    kyc = peewee.BooleanField(default=False)
     product = peewee.CharField()
     marketingCampaign = peewee.CharField()
     isActive = peewee.BooleanField(default=True)
@@ -29,6 +29,12 @@ class ResetPasswordToken(BaseModel):
     token = peewee.CharField(index=True)
     createdAt = peewee.DateTimeField(default=datetime.now())
     isExpire = peewee.BooleanField(default=False)
+
+class UserKYC(BaseModel):
+    owner = peewee.ForeignKeyField(User, on_delete="CASCADE")
+    KYCDocumentName = peewee.CharField()
+    fileName = peewee.CharField()
+    createdAt = peewee.DateTimeField(default=datetime.now())
 
 class MailConfig(BaseModel):
     username= peewee.CharField()
