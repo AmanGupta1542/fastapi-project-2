@@ -57,3 +57,6 @@ class ChangePass(BaseModel):
     oldPassword: str = Field(min_length=6)
     newPassword: str = Field(min_length=6)
     
+class DirRename(BaseModel):
+    old_dir_name: str
+    new_dir_name: str

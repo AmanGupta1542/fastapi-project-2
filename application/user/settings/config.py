@@ -4,7 +4,7 @@ from fastapi_mail import ConnectionConfig
 class Settings(BaseSettings):
     app_name: str = "Fast API"
     admin_email: str = "aman@mistpl.com"
-    
+ 
     database_name: str
     user : str
     password : str
@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     secret_key : str
     algorithm : str
     access_token_expire_minutes : int
+
+    static_dir_path: str = "static\\"
 
     class Config:
         env_file = ".env"

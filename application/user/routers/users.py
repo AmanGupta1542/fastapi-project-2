@@ -1,9 +1,10 @@
 import os
+import re
 from fastapi import APIRouter, Depends, HTTPException, Path, status, Body, BackgroundTasks, Request, File, UploadFile
 from fastapi_mail import FastMail, MessageSchema
 from fastapi.requests import Request
 from datetime import datetime, timedelta
-from typing import Union
+from typing import Union, List
 
 from ..dependencies import common as CDepends
 from ..schemas import common as CSchemas
@@ -158,3 +159,70 @@ async def create_upload_file(
             # return {"status": "error", "message": "Something went wrong"}
 
         return {"status":"success", "message":"Document upload successfully", "document_name": file.filename}
+
+
+# def get_user_dir(user_id:int, file_name:str):
+#     if not os.path.exists('static/'+str(user_id)):
+#         os.makedirs('static/'+str(user_id))
+#     if not os.path.exists('static/'+str(user_id)+'/'+str(file_name)):
+#         os.makedirs('static/'+str(user_id)+'/'+str(file_name))
+#         return True # id requested directory not exist
+#     else:
+#         return False # id requested directory already exist
+#     with open ('static/'+str(user_id)+'/'+file.filename, 'wb+') as user_kyc_file:
+#         user_kyc_file.write(file.file.read()) 
+
+# def is_dir_exist(user_id: int, dir_name: str):
+#     if os.path.exists('static/'+str(user_id)):
+#         if os.path.exists('static/'+str(user_id)+'/'+str(dir_name)):
+#             return True
+#         else: 
+#             return False
+#     return False
+
+
+# @router.post("/create-directory/{dir_name}")
+# def create_directory(dir_name: str, current_User: CSchemas.User = Depends(UserO.get_current_active_user) ):
+#     # /\:*?""<>|
+#     pattern = '[:*?"<>/\|]'
+#     # pattern = re.compile('[/\:*?"<>|]')
+#     # if(pattern.search(dir_name) == None):
+#     #     print("String contains special characters.")
+#     # else:
+#     #     print("String does not contain any special character.")
+#     if re.search(pattern, dir_name):
+#         raise HTTPException(
+#             status_code=status.HTTP_302_FOUND,
+#             detail='Folder name should not contains /\:*?"<>| characters',
+#             # headers={"WWW-Authenticate": "Bearer"},
+#         )
+#     is_dir_exist = get_user_dir(current_User.id, dir_name)
+#     if(is_dir_exist):
+#         # new directory created with dir_name
+#         return {'status': 'success', 'message': 'Folder created successfully'}
+#     else:
+#         # directory already exist with this dir_name
+#         return {'status': 'error', 'message': 'Folder already exist with this name'}
+
+# def upload_files(user_id: int, dir_name: str, files: list[UploadFile]):
+#     for file in files:
+#         with open ('static/'+str(user_id)+'/'+dir_name +'/'+file.filename, 'wb+') as f:
+#             f.write(file.file.read())
+
+# @router.post("/upload-files/{dir_name}")
+# def create_directory(
+#     files: list[UploadFile],
+#     dir_name: str, 
+#     current_User: CSchemas.User = Depends(UserO.get_current_active_user) ):
+#     if files == None:
+#         return {'status': 'error', "message": "No upload file sent"}
+
+#     is_dir = is_dir_exist(current_User.id, dir_name)
+#     if is_dir:
+#         upload_files(current_User.id, dir_name, files)
+#         return {'status': 'success', "message": "Files uploaded successfully"}
+#     else:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail='Folder with this name not found',
+#         )

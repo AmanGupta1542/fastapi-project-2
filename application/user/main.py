@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .settings import metadata as meta, config
 from .database import database
 from .models.common import *
-from .routers import users
+from .routers import users, neilbox
 
 database.db.connect()
 database.db.create_tables([User, UserKYC, TokenBlocklist, MailConfig, DatabaseConfig, ResetPasswordToken])
@@ -34,6 +34,7 @@ app.add_middleware(
 )
 
 app.include_router(users.router)
+app.include_router(neilbox.router)
 
 @app.get("/")
 def root():
