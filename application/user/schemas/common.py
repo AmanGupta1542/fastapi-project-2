@@ -1,4 +1,4 @@
-from fastapi import File, UploadFile
+from fastapi import Body, File, Path, UploadFile
 from pydantic import BaseModel, EmailStr, Field
 import peewee
 from pydantic.utils import GetterDict
@@ -56,7 +56,13 @@ class User(UserBase):
 class ChangePass(BaseModel):
     oldPassword: str = Field(min_length=6)
     newPassword: str = Field(min_length=6)
+
+class PathSchema(BaseModel):
+    path: Union[str, None] = None
     
-class DirRename(BaseModel):
+class DirRename(PathSchema):
     old_dir_name: str
     new_dir_name: str
+
+class DirReqData(PathSchema):
+    dir_name: str
