@@ -7,7 +7,7 @@ from .models.common import *
 from .routers import users, neilbox
 
 database.db.connect()
-database.db.create_tables([User, UserKYC, TokenBlocklist, MailConfig, DatabaseConfig, ResetPasswordToken])
+database.db.create_tables([User, UserKYC, TokenBlocklist, MailConfig, DatabaseConfig, ResetPasswordToken, StarredFiles])
 database.db.close()
 
 app = FastAPI(

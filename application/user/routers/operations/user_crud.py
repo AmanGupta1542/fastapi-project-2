@@ -77,7 +77,7 @@ async def auth_user_staticfiles(token: str):
     except JWTError:
         raise credentials_exception
     user = get_user(email=token_data.email)
-    if user is None:
+    if user == False:
         raise credentials_exception
     return user
 
@@ -101,7 +101,7 @@ async def get_current_user(token: str = Depends(token_auth_scheme)):
     except JWTError:
         raise credentials_exception
     user = get_user(email=token_data.email)
-    if user is None:
+    if user == False:
         raise credentials_exception
     return user
 
@@ -193,3 +193,54 @@ def get_dir_metadata(dir_path: str):
     dir_info['created time'] = time.ctime(os.path.getctime(dir_path))
     dir_info['size'] = "{:.1f}".format(os.path.getsize(dir_path)/1024)
     return dir_info
+
+def is_starredfile_exist(user_id:int, filePath: str, fileName: str):
+    row_count = CModel.StarredFiles.select().where(
+        CModel.StarredFiles.owner == user_id, 
+        CModel.StarredFiles.filePath == filePath.lower(),
+        CModel.StarredFiles.fileName == fileName.lower()).count()
+    if row_count:
+        return False
+    else:
+        return True
+def strore_data(data):
+    if is_starredfile_exist(data['owner'], data['path'], data['dir_name']):
+        store = CModel.StarredFiles(owner= data['owner'], filePath=data['path'], fileName= data['dir_name'])
+        store.save()
+        return store
+    else:
+        raise HTTPException(status_code=status.HTTP_302_FOUND, detail="already exist")
+
+def get_starred_data(user_id, file_id: Union[int, None] = None):
+    # if file id to without list else list
+    try:
+        print(user_id)
+        print(file_id)
+        if file_id == None:
+            print('if')
+            data= list(CModel.StarredFiles.filter(CModel.StarredFiles.owner == user_id)) 
+        else:  
+            print('else')
+            data = CModel.StarredFiles.get(CModel.StarredFiles.owner == user_id, CModel.StarredFiles.id == file_id)
+        print(data)
+        return data
+    except CModel.StarredFiles.DoesNotExist as e:
+        # if not exist
+        raise HTTPException(status_code=404, detail="Not found")
+    except Exception as e:
+        print(e)
+        return False
+
+def delete_starred_data(user_id, file_id):
+    try:
+        # Find existrance of the row
+        CModel.StarredFiles.get(CModel.StarredFiles.owner == user_id, CModel.StarredFiles.id == file_id).delete_instance()
+        
+        return True
+    except CModel.StarredFiles.DoesNotExist as e:
+        # if not exist
+        raise HTTPException(status_code=404, detail="Not found")
+    except Exception as e:
+        # Any unexpexted errors
+        print(e)
+        return False

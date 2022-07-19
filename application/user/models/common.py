@@ -57,3 +57,9 @@ class DatabaseConfig(BaseModel):
 class TokenBlocklist(BaseModel):
     token = peewee.CharField()
     inserted_at = peewee.DateTimeField(default=datetime.now())
+
+class StarredFiles(BaseModel):
+    owner = peewee.ForeignKeyField(User, on_delete="CASCADE")
+    filePath = peewee.CharField()
+    fileName = peewee.CharField()
+    createdAt = peewee.DateTimeField(default=datetime.now())

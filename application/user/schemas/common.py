@@ -2,7 +2,7 @@ from fastapi import Body, File, Path, UploadFile
 from pydantic import BaseModel, EmailStr, Field
 import peewee
 from pydantic.utils import GetterDict
-from typing import Any, Union
+from typing import Any, Union, List
 
 
 class PeeweeGetterDict(GetterDict):
@@ -18,6 +18,12 @@ class TokenData(BaseModel):
 class LoginData(BaseModel):
     email: str
     password: str
+
+class StatusSchema(BaseModel):
+    status: str
+
+class MessageSchema(StatusSchema):
+    message: str
 
 class ResetPassword(BaseModel):
     password: str = Field(
@@ -66,3 +72,36 @@ class DirRename(PathSchema):
 
 class DirReqData(PathSchema):
     dir_name: str
+
+class DIRShortcut(BaseModel):
+    source_path: str
+    destination_path: str
+
+class DIRStarred(PathSchema):
+    dir_name: str
+
+class DIRPathSchema(DIRStarred):
+    pass
+
+class StarredModelSchema(BaseModel):
+    owner: User
+    path: Union[str, None] = None
+    dir_name: str
+
+class ResDIRPathSchema(StatusSchema):
+    data: DIRStarred
+
+class ResDIRPathSchema2(BaseModel):
+    id: int
+    filePath: Union[str, None] = None
+    fileName: str
+    createdAt: Any
+    class Config:
+        orm_mode = True
+        getter_dict = PeeweeGetterDict
+
+class StarredData(StatusSchema):
+    data: List[ResDIRPathSchema2]
+
+class SingleStarredData(StatusSchema):
+    data: ResDIRPathSchema2

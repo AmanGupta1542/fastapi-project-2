@@ -1,11 +1,27 @@
 from fastapi import APIRouter, HTTPException, Depends, status, UploadFile
 import re, os, shutil
 from typing import Union
+from cryptography.fernet import Fernet #file encryption
+from fastapi.responses import ORJSONResponse, StreamingResponse
 
 from ..dependencies import common as CDepends
 from ..schemas import common as CSchemas
 from ..settings import config
 from .operations import user_crud as UserO
+
+# key generation
+key = Fernet.generate_key()
+
+# string the key in a file
+with open('filekey.key', 'wb') as filekey:
+   filekey.write(key)
+
+# opening the key
+with open('filekey.key', 'rb') as filekey:
+    key = filekey.read()
+ 
+# using the generated key
+fernet = Fernet(key)
 
 static_dir_path = config.settings.static_dir_path
 router = APIRouter(
@@ -105,19 +121,6 @@ def rename_directory(
         return {'status': 'error', 'message': "Can not delete trash folder"}
     if is_dir:
         dest_path = static_dir_path+str(current_User.id)+'\\'+'trash'
-        # print(src_path)
-        # print(dest_path)
-        # shutil.rmtree(dir_path+data.dir_name)
-        # shutil.copy2(src_path, dest_path)
-
-        ######## trick ###########
-        # if you want to delete folder permanently without moving it to the trash
-        # send API body like this
-        #{
-        #    "path": "trash",
-        #    "dir_name": "..\\folder_name"
-        #}
-        ##########################
         if data.path != None and data.path.startswith("trash"):
             shutil.rmtree(src_path)
         else:
@@ -153,3 +156,77 @@ def rename_directory(
         return {'status': 'success', 'dir_info': dir_info}
     else:
         return {'status': 'error', "message": "Folder not exist"}
+
+# @router.get('/encrypt-file/{dir_name}', response_class=FileResponse)
+# def encrypt_file(
+#     dir_name: str,
+#     current_User: CSchemas.User = Depends(UserO.get_current_active_user)):
+#     path = static_dir_path+str(current_User.id)+'\\'+dir_name
+#     # opening the original file to encrypt
+#     with open(path, 'rb') as file:
+#         original = file.read()
+    
+#     encrypted = fernet.encrypt(original)
+#     with open (path, 'wb') as enc_file:
+#         enc_file.write(encrypted)
+        
+#     # return {'status': 'success', 'file': FileResponse(path)}
+#     return FileResponse(path)
+
+@router.post('/create-shortcut')
+def create_shortcut(
+    data: CSchemas.DIRShortcut,
+    current_User: CSchemas.User = Depends(UserO.get_current_active_user)):
+    src = static_dir_path+str(current_User.id)+'\\'+data.source_path
+    dest = static_dir_path+str(current_User.id)+'\\'+data.destination_path
+    return {'status': 'success', 'src': src, 'dest': dest}
+
+@router.post('/starred')
+def starred_files(
+    data: CSchemas.DIRStarred,
+    current_User: CSchemas.User = Depends(UserO.get_current_active_user)):
+    file_data = {}
+
+    path = static_dir_path+str(current_User.id)+'\\'+data.path if data.path != None else static_dir_path+str(current_User.id)
+    dir_name = path+'\\'+data.dir_name
+    # CSchemas.StarredModelSchema(current_User, path, data.dir_name)
+    file_data['owner'] = current_User
+    file_data['path'] = path
+    file_data['dir_name'] = data.dir_name
+    is_stored = UserO.strore_data(file_data)
+    if is_stored != False:
+        return {'status': 'success', 'data': is_stored}
+    else:
+        return {'status': 'error', 'message': 'something went wrong'}
+
+@router.get('/starred', response_model=CSchemas.StarredData)
+def get_starred_files(current_User: CSchemas.User = Depends(UserO.get_current_active_user)):
+    data = UserO.get_starred_data(current_User.id)
+    if data != False:
+        return {'status': 'success', 'data': data}
+    else:
+        # return {'status': 'error', 'message': 'something went wrong'}
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR , detail="Internal server error")
+
+@router.get('/starred/{id}', response_model=CSchemas.SingleStarredData)
+def get_starred_files(id: int, current_User: CSchemas.User = Depends(UserO.get_current_active_user)):
+    data = UserO.get_starred_data(current_User.id, id)
+    if data != False:
+        return {'status': 'success', 'data': data}
+    else:
+        # return {'status': 'error', 'message': 'something went wrong'}
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR , detail="Internal server error")
+
+@router.delete('/starred/{id}', response_model=CSchemas.MessageSchema)
+def get_starred_files(id: int, current_User: CSchemas.User = Depends(UserO.get_current_active_user)):
+    """
+    Delete starred file
+
+    - **Scenario 1**: If id not exist
+    - **Scenario 2**: If id exist
+    """
+    is_deleted = UserO.delete_starred_data(current_User.id, id)
+    if is_deleted:
+        return {'status': 'success', 'message': 'Removed'}
+    else:
+        return {'status': 'error', 'message': 'something went wrong'}
