@@ -1,0 +1,49 @@
+FastAPI Request object data: 
+{
+    'scope': {
+        'type': 'http', 
+        'asgi': {
+            'version': '3.0', 
+            'spec_version': '2.3'
+            }, 
+        'http_version': '1.1', 
+        'server': ('127.0.0.1', 8000), 
+        'client': ('127.0.0.1', 55723), 
+        'scheme': 'http', 
+        'root_path': '/static', 
+        'headers': [
+                (b'host', b'127.0.0.1:8000'), 
+                (b'connection', b'keep-alive'), 
+                (b'cache-control', b'max-age=0'), 
+                (b'sec-ch-ua', b'".Not/A)Brand";v="99", "Google Chrome";v="103", "Chromium";v="103"'), 
+                (b'sec-ch-ua-mobile', b'?0'), 
+                (b'sec-ch-ua-platform', b'"Windows"'), 
+                (b'upgrade-insecure-requests', b'1'), 
+                (b'user-agent', b'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36'), 
+                (b'accept', b'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9'), 
+                (b'authorization', b'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbWFuQG1pc3RwbC5jb20iLCJleHAiOjE2NTgyMDc2NTV9.2y-iIgzj_oUBMDfa_2GT8wI6YzBwGJ0zyvVj4Uuxy28'),
+                (b'sec-fetch-site', b'none'), 
+                (b'sec-fetch-mode', b'navigate'), 
+                (b'sec-fetch-user', b'?1'), 
+                (b'sec-fetch-dest', b'document'), 
+                (b'accept-encoding', b'gzip, deflate, br'), 
+                (b'accept-language', b'en-US,en;q=0.9'), 
+                (b'cookie', b'ab.storage.userId.7af503ae-0c84-478f-98b0-ecfff5d67750=%7B%22g%22%3A%226606680%22%2C%22c%22%3A1655657250206%2C%22l%22%3A1655657250215%7D; ab.storage.deviceId.7af503ae-0c84-478f-98b0-ecfff5d67750=%7B%22g%22%3A%22e767f506-a155-0eab-0ff4-64933cda8124%22%2C%22c%22%3A1655657250232%2C%22l%22%3A1655657250232%7D; csrftoken=HT0RAt4RT8novtP4KTuctTPXBZNWcd592Du6IlZM59OXi3ZkFba8T4FFsa0r2e7O; ab.storage.sessionId.7af503ae-0c84-478f-98b0-ecfff5d67750=%7B%22g%22%3A%22f5999df0-8ff5-39e9-77dc-3c1b13e497d7%22%2C%22e%22%3A2158122561015%2C%22c%22%3A1655657250210%2C%22l%22%3A1658122561015%7D'), (b'if-none-match', b'62804c2e7960adcb6c2c64982d369135'), 
+                (b'if-modified-since', b'Wed, 13 Jul 2022 12:33:47 GMT')
+            ], 
+        'method': 'GET', 
+        'path': '/2/icon2.png', 
+        'raw_path': b'/static/2/icon2.png', 
+        'query_string': b'', 
+        'app': <fastapi.applications.FastAPI object at 0x000001CFD2910790>, 
+        'fastapi_astack': <contextlib.AsyncExitStack object at 0x000001CFD4569930>, 
+        'router': <fastapi.routing.APIRouter object at 0x000001CFD2910C10>, 
+        'path_params': {}, 
+        'app_root_path': '', 
+        'endpoint': <application.main.AuthStaticFiles object at 0x000001CFD4568EE0>
+    }, 
+        '_receive': <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.httptools_impl.RequestResponseCycle object at 0x000001CFD4569750>>, 
+        '_send': <function empty_send at 0x000001CFD3342DD0>, 
+        '_stream_consumed': False, 
+        '_is_disconnected': False
+}
