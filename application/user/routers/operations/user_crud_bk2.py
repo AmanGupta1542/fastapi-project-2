@@ -7,11 +7,11 @@ from fastapi.security import HTTPBearer  , http
 import string, random
 import os, re, time
 
-from ...settings.config import settings, static_dir_path
+from ...settings import config
 from ...dependencies import common as CDepends
 from ...models import common as CModel
 from ...schemas import common as CSchemas
-delimiter = '/'
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 token_auth_scheme = HTTPBearer()
 
@@ -54,7 +54,7 @@ def create_access_token(data: dict, expires_delta: Union[timedelta , None] = Non
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+    encoded_jwt = jwt.encode(to_encode, config.settings.secret_key, algorithm=config.settings.algorithm)
     return encoded_jwt
 
 async def auth_user_staticfiles(token: str):
@@ -67,7 +67,7 @@ async def auth_user_staticfiles(token: str):
     
     try:
         if not CModel.TokenBlocklist.select().where(CModel.TokenBlocklist.token == token.credentials).count():
-            payload = jwt.decode(token.credentials, settings.secret_key, algorithms=[settings.algorithm])
+            payload = jwt.decode(token.credentials, config.settings.secret_key, algorithms=[config.settings.algorithm])
             email: str = payload.get("sub")
             if email is None:
                 raise credentials_exception
@@ -82,6 +82,7 @@ async def auth_user_staticfiles(token: str):
     return user
 
 async def get_current_user(token: str = Depends(token_auth_scheme)):
+    print(type(token))
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid token",
@@ -90,7 +91,7 @@ async def get_current_user(token: str = Depends(token_auth_scheme)):
     
     try:
         if not CModel.TokenBlocklist.select().where(CModel.TokenBlocklist.token == token.credentials).count():
-            payload = jwt.decode(token.credentials, settings.secret_key, algorithms=[settings.algorithm])
+            payload = jwt.decode(token.credentials, config.settings.secret_key, algorithms=[config.settings.algorithm])
             email: str = payload.get("sub")
             if email is None:
                 raise credentials_exception
@@ -160,56 +161,30 @@ def path_validation(path: str):
     if path.find('.') != -1:
         raise exc
     return True
-
+    
 def create_dir(user_id:int, file_name:str, dir_path: Union[str, None] = None):
-    user_dir_path = static_dir_path+str(user_id)
-    if not os.path.exists(user_dir_path):
-        os.makedirs(user_dir_path)
-        os.makedirs(user_dir_path+delimiter+'trash')
-    f = str(file_name) if dir_path == None else dir_path + delimiter + str(file_name)
-    if not os.path.exists(user_dir_path+delimiter+ f):
-        os.makedirs(user_dir_path+delimiter+ f)
-        # if dir_path == None:
-        #     os.makedirs(user_dir_path+delimiter+str(file_name))
-        # else:
-        #     os.makedirs(user_dir_path+delimiter+ dir_path + delimiter + str(file_name))
+    print(dir_path)
+    if not os.path.exists('static\\'+str(user_id)):
+        os.makedirs('static\\'+str(user_id))
+    f = str(file_name) if dir_path == None else dir_path + '\\' + str(file_name)
+    if not os.path.exists('static\\'+str(user_id)+'\\'+ f):
+        if dir_path == None:
+            os.makedirs('static\\'+str(user_id)+'\\'+str(file_name))
+        else:
+            os.makedirs('static\\'+str(user_id)+'\\'+ dir_path + '\\' + str(file_name))
         return True # id requested directory not exist
     else:
         return False # id requested directory already exist
 
-def create_file(user_id:int, file_name:str, dir_path: Union[str, None] = None):
-    user_file_path = static_dir_path+str(user_id)
-    # print(user_file_path)
-    if not os.path.exists(user_file_path):
-        os.makedirs(user_file_path)
-        os.makedirs(user_file_path+delimiter+'trash')
-    f = str(file_name) if dir_path == None or dir_path == ''  else dir_path + delimiter + str(file_name)
-    # print(user_file_path+f)
-    # print(Path(user_file_path+delimiter+ f).touch(exist_ok=True)) # Using pathlin Path
-    try:
-        with open(user_file_path+delimiter+ f, 'r') as file_exist:
-            return False
-    except FileNotFoundError as e:
-        open(user_file_path+delimiter+ f, 'w+')
-        return True
-
-def user_static_exist(user_id: int):
-    if os.path.exists(static_dir_path+str(user_id)):
-        return True
-    else: 
-        return False
-
 def is_dir_exist(user_id: int, dir_name: str, dir_path: Union[str, None] = None):
-    user_dir_path = static_dir_path+str(user_id)
-    if dir_name == '': return True
-    if os.path.exists(user_dir_path):
-        if dir_path == None or dir_path == '':
-            if os.path.exists(user_dir_path+delimiter+str(dir_name)):
+    if os.path.exists('static\\'+str(user_id)):
+        if dir_path == None:
+            if os.path.exists('static\\'+str(user_id)+'\\'+str(dir_name)):
                 return True
             else: 
                 return False
         else:
-            if os.path.exists(user_dir_path+delimiter+dir_path+delimiter+str(dir_name)):
+            if os.path.exists('static\\'+str(user_id)+'\\'+dir_path+'\\'+str(dir_name)):
                 return True
             else: 
                 return False
@@ -226,7 +201,7 @@ def get_file_metadata(file_path: str):
 
 def upload_files(user_id: int, files: list[UploadFile], dir_name: Union[str, None]= None):
     files_info = []
-    dir_path = static_dir_path+str(user_id)+delimiter+dir_name +delimiter if dir_name != None else static_dir_path+str(user_id)+delimiter
+    dir_path = 'static\\'+str(user_id)+'\\'+dir_name +'\\' if dir_name != None else 'static\\'+str(user_id)+'\\'
     for file in files:
         with open (dir_path+file.filename, 'wb+') as f:
             f.write(file.file.read())
@@ -260,11 +235,17 @@ def strore_data(data):
         raise HTTPException(status_code=status.HTTP_302_FOUND, detail="already exist")
 
 def get_starred_data(user_id, file_id: Union[int, None] = None):
+    # if file id to without list else list
     try:
+        print(user_id)
+        print(file_id)
         if file_id == None:
+            print('if')
             data= list(CModel.StarredFiles.filter(CModel.StarredFiles.owner == user_id)) 
         else:  
+            print('else')
             data = CModel.StarredFiles.get(CModel.StarredFiles.owner == user_id, CModel.StarredFiles.id == file_id)
+        print(data)
         return data
     except CModel.StarredFiles.DoesNotExist as e:
         # if not exist

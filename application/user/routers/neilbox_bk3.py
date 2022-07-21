@@ -6,9 +6,9 @@ from fastapi.responses import FileResponse
 
 from ..dependencies import common as CDepends
 from ..schemas import common as CSchemas
-from ..settings.config import settings, static_dir_path
+from ..settings.config import settings, delimiter
 from .operations import user_crud as UserO
-delimiter = '/'
+
 # key generation
 key = Fernet.generate_key()
 
@@ -23,7 +23,7 @@ with open('filekey.key', 'rb') as filekey:
 # using the generated key
 fernet = Fernet(key)
 
-
+static_dir_path = settings.static_dir_path
 router = APIRouter(
     prefix="/neilbox",
     tags=["NeilBox"],
@@ -45,12 +45,8 @@ def path_validation(path: str):
     else:
         return {'status': 'error'}
 
-@router.post("/directories", response_model=CSchemas.MessageSchema) # pass
+@router.post("/directories", response_model=CSchemas.MessageSchema)
 def create_directory(data:CSchemas.DirReqData, current_User: CSchemas.User = Depends(UserO.get_current_active_user) ):
-    # if path empty then create dir on root folder else create dir on the specified path
-    # if dir exists on the specified path then raise error
-    if not data.dir_name:
-        return {'status': 'error', 'message': "Name can't empty"}
     UserO.dir_validation(data.dir_name)
     if data.path != None:
         UserO.path_validation(data.path)
@@ -60,14 +56,10 @@ def create_directory(data:CSchemas.DirReqData, current_User: CSchemas.User = Dep
     else:
         return {'status': 'error', 'message': 'Folder already exist with this name'}
 
-@router.post('/files/create', response_model=CSchemas.MessageSchema) # Pass
+@router.post('/files/create', response_model=CSchemas.MessageSchema)
 def create_file(
     data: CSchemas.CreateFileSchema,
     current_User: CSchemas.User = Depends(UserO.get_current_active_user)):
-    # if path empty then create file on root folder else create file on the specified path
-    # if file exists on the specified path then raise error
-    if not data.file_name:
-        return {'status': 'error', 'message': "Name can't empty"}
     if data.path != None:
         UserO.path_validation(data.path)
     is_created = UserO.create_file(current_User.id, data.file_name, data.path) if data.path != None else UserO.create_file(current_User.id, data.file_name)
@@ -76,24 +68,21 @@ def create_file(
     else:
         return {'status': 'error', "message": "Already exist"}
 
-@router.post("/files") # Pass
-def upload_files(
+@router.post("/files")
+def create_files(
     files: list[UploadFile],
-    path: Union[str, None] = None, 
+    dir_name: Union[str, None] = None, 
     current_User: CSchemas.User = Depends(UserO.get_current_active_user) ):
-    # If uploaded file already exist (not handled yet)
-    # If requested path not exists then raise error
-    # If requested path none then upload files on root else upload on the requested path
-    if not UserO.user_static_exist(current_User.id):
-        return {'status': 'error', 'message': 'User static folder not exist'}
-    if path != None:
-        UserO.path_validation(path)
-    if files == None:
-        return {'status': 'error', "message": "No upload file sent"}
-    is_dir = UserO.is_dir_exist(current_User.id, path) if path != None else True
+    
+    if dir_name != None:
+        UserO.dir_validation(dir_name)
+    # if files == None:
+    #     return {'status': 'error', "message": "No upload file sent"}
+
+    is_dir = UserO.is_dir_exist(current_User.id, dir_name) if dir_name != None else True
     if is_dir:
-        if path != None:
-            files_info = UserO.upload_files(current_User.id, files, path)
+        if dir_name != None:
+            files_info = UserO.upload_files(current_User.id, files, dir_name)
         else:
             files_info = UserO.upload_files(current_User.id, files)
         return {'status': 'success', "message": "Files uploaded successfully", 'files_info': files_info}
@@ -107,8 +96,6 @@ def upload_files(
 def get_all_directories(
     current_User: CSchemas.User = Depends(UserO.get_current_active_user)):
     dir_info = []
-    if not UserO.user_static_exist(current_User.id):
-        return {'status': 'error', 'message': 'User static folder not exist'}
     if UserO.is_dir_exist(current_User.id, ''):
         return {'status': 'error', 'message': 'User static files not exist'}
     try:
@@ -118,13 +105,10 @@ def get_all_directories(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='Internal server error')
 
 
-@router.get("/directories/{dir_name}") # pass
+@router.get("/directories/{dir_name}")
 def directories(
     dir_name: str, 
     current_User: CSchemas.User = Depends(UserO.get_current_active_user)):
-    # If dir not exist on requested path then raise error
-    # if dir exist on requested path then return dir list inside that dir
-    # no need to call UserO.user_static_exist function here
     UserO.dir_validation(dir_name)
     is_dir = UserO.is_dir_exist(current_User.id, dir_name)
     if is_dir:
@@ -145,10 +129,6 @@ def rename_directory(
     - **Scenario 3**: Can not modify file extension
     - **Scenario 4**: Folder and file should be exist
     """
-    if not UserO.user_static_exist(current_User.id):
-        return {'status': 'error', 'message': 'User static folder not exist'}
-    if not data.old_dir_name or not data.new_dir_name:
-        return {'status': 'error', 'message': "Folder name can't empty"}
     UserO.dir_validation(data.old_dir_name)
     UserO.dir_validation(data.new_dir_name)
     if data.path != None:
@@ -177,14 +157,10 @@ def rename_directory(
 @router.delete(
     "/directory", 
     description="Path is optional and if you are giving path then seperate path with double slash",
-    response_model=CSchemas.MessageSchema) # pass
+    response_model=CSchemas.MessageSchema)
 def delete_directory(
     data: CSchemas.DirReqData, 
     current_User: CSchemas.User = Depends(UserO.get_current_active_user)):
-    if not UserO.user_static_exist(current_User.id):
-        return {'status': 'error', 'message': 'User static folder not exist'}
-    if data.dir_name == '':
-        return {'status': 'error', 'message': "Name can't empty"}
     UserO.dir_validation(data.dir_name)
     if data.path != None:
         UserO.path_validation(data.path)
@@ -204,38 +180,30 @@ def delete_directory(
         return {'status': 'error', "message": "Folder does not exist"}
 
 
-@router.get("/get-dir-info") # Pass
+@router.get("/get-dir-info")
 def direcotry_details(
     dir_name: Union[str, None] = None, 
     current_User: CSchemas.User = Depends(UserO.get_current_active_user)):
-    # If rro folder is not exist or created yet then give error message
-    # If dir name is empth then send all dir and files list from root
-    # If dir exist on requested path then send all sub dir and files list
-    # If dir not exist on requested path then railse error
-    # If requested dir_name is a file not a dir then raise error
+
     dirs = []
     files = []
     dir_info = {}
-    if not UserO.user_static_exist(current_User.id):
-        return {'status': 'error', 'message': 'User static folder not exist'}
+
     is_dir = UserO.is_dir_exist(current_User.id, dir_name) if dir_name != None else True
     dir_path = static_dir_path+str(current_User.id)+delimiter+dir_name if dir_name != None else static_dir_path+str(current_User.id)
-    print(is_dir)
+    
     if is_dir:
-        try:
-            with os.scandir(dir_path) as it:
-                for entry in it:
-                    if not entry.name.startswith('.') and entry.is_file():
-                        files.append(entry.name)
-                        # print(entry.name)
-                    if not entry.name.startswith('.') and entry.is_dir():
-                        dirs.append(entry.name)
-                        # print(entry.name)
-            dir_info['dirs'] = dirs
-            dir_info['files'] = files
-            return {'status': 'success', 'dir_info': dir_info}
-        except NotADirectoryError as e:
-            return {'status': 'error', "message": "Not a folder"}
+        with os.scandir(dir_path) as it:
+            for entry in it:
+                if not entry.name.startswith('.') and entry.is_file():
+                    files.append(entry.name)
+                    # print(entry.name)
+                if not entry.name.startswith('.') and entry.is_dir():
+                    dirs.append(entry.name)
+                    # print(entry.name)
+        dir_info['dirs'] = dirs
+        dir_info['files'] = files
+        return {'status': 'success', 'dir_info': dir_info}
     else:
         return {'status': 'error', "message": "Folder not exist"}
 

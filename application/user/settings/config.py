@@ -1,6 +1,9 @@
 from pydantic import BaseSettings
 from pathlib import Path
 from fastapi_mail import ConnectionConfig
+
+delimiter = '/'
+static_dir_path = 'static/'
 class Settings(BaseSettings):
     app_name: str = "Fast API"
     admin_email: str = "aman@mistpl.com"
@@ -15,7 +18,7 @@ class Settings(BaseSettings):
     algorithm : str
     access_token_expire_minutes : int
 
-    static_dir_path: str = "static\\"
+    static_dir_path: str = "static" + delimiter
 
     class Config:
         env_file = ".env"

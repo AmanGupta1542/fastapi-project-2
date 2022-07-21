@@ -7,11 +7,11 @@ from fastapi.security import HTTPBearer  , http
 import string, random
 import os, re, time
 
-from ...settings.config import settings, static_dir_path
+from ...settings.config import settings, delimiter
 from ...dependencies import common as CDepends
 from ...models import common as CModel
 from ...schemas import common as CSchemas
-delimiter = '/'
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 token_auth_scheme = HTTPBearer()
 
@@ -162,7 +162,7 @@ def path_validation(path: str):
     return True
 
 def create_dir(user_id:int, file_name:str, dir_path: Union[str, None] = None):
-    user_dir_path = static_dir_path+str(user_id)
+    user_dir_path = settings.static_dir_path+str(user_id)
     if not os.path.exists(user_dir_path):
         os.makedirs(user_dir_path)
         os.makedirs(user_dir_path+delimiter+'trash')
@@ -178,14 +178,12 @@ def create_dir(user_id:int, file_name:str, dir_path: Union[str, None] = None):
         return False # id requested directory already exist
 
 def create_file(user_id:int, file_name:str, dir_path: Union[str, None] = None):
-    user_file_path = static_dir_path+str(user_id)
-    # print(user_file_path)
+    user_file_path = settings.static_dir_path+str(user_id)
     if not os.path.exists(user_file_path):
         os.makedirs(user_file_path)
         os.makedirs(user_file_path+delimiter+'trash')
-    f = str(file_name) if dir_path == None or dir_path == ''  else dir_path + delimiter + str(file_name)
-    # print(user_file_path+f)
-    # print(Path(user_file_path+delimiter+ f).touch(exist_ok=True)) # Using pathlin Path
+    f = str(file_name) if dir_path == None else dir_path + delimiter + str(file_name)
+    # print(Path(user_file_path+delimiter+ f).touch(exist_ok=True))
     try:
         with open(user_file_path+delimiter+ f, 'r') as file_exist:
             return False
@@ -193,17 +191,11 @@ def create_file(user_id:int, file_name:str, dir_path: Union[str, None] = None):
         open(user_file_path+delimiter+ f, 'w+')
         return True
 
-def user_static_exist(user_id: int):
-    if os.path.exists(static_dir_path+str(user_id)):
-        return True
-    else: 
-        return False
-
 def is_dir_exist(user_id: int, dir_name: str, dir_path: Union[str, None] = None):
-    user_dir_path = static_dir_path+str(user_id)
+    user_dir_path = settings.static_dir_path+str(user_id)
     if dir_name == '': return True
     if os.path.exists(user_dir_path):
-        if dir_path == None or dir_path == '':
+        if dir_path == None:
             if os.path.exists(user_dir_path+delimiter+str(dir_name)):
                 return True
             else: 
@@ -226,7 +218,7 @@ def get_file_metadata(file_path: str):
 
 def upload_files(user_id: int, files: list[UploadFile], dir_name: Union[str, None]= None):
     files_info = []
-    dir_path = static_dir_path+str(user_id)+delimiter+dir_name +delimiter if dir_name != None else static_dir_path+str(user_id)+delimiter
+    dir_path = settings.static_dir_path+str(user_id)+delimiter+dir_name +delimiter if dir_name != None else settings.static_dir_path+str(user_id)+delimiter
     for file in files:
         with open (dir_path+file.filename, 'wb+') as f:
             f.write(file.file.read())

@@ -105,3 +105,6 @@ class StarredData(StatusSchema):
 
 class SingleStarredData(StatusSchema):
     data: ResDIRPathSchema2
+
+class CreateFileSchema(PathSchema):
+    file_name: str
