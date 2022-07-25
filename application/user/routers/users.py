@@ -3,6 +3,7 @@ import re
 from fastapi import APIRouter, Depends, HTTPException, Path, status, Body, BackgroundTasks, Request, File, UploadFile
 from fastapi_mail import FastMail, MessageSchema
 from fastapi.requests import Request
+from fastapi.responses import RedirectResponse
 from datetime import datetime, timedelta
 from typing import Union, List
 
@@ -66,7 +67,7 @@ async def forget_password(request: Request, background_tasks: BackgroundTasks, d
     else:
         try:
             token = UserO.reset_password_token()
-            url = "{}/api/reset-password/{}".format(request.client.host, token)
+            url = "{}/api/users/password-reset/{}".format(config.settings.domain, token)
             template_data = {"url": url}
             create_token = CModels.ResetPasswordToken(owner = db_user, token= token)
             create_token.save()
@@ -83,6 +84,22 @@ async def forget_password(request: Request, background_tasks: BackgroundTasks, d
         except:
             return {"status": "error", "message": "Something went wrong"}
 
+@router.get("/password-reset/{token}")
+def reset_password(token: str, request: Request):
+    try:
+        user_token = CModels.ResetPasswordToken.get(CModels.ResetPasswordToken.token == token)
+    except:
+        # return RedirectResponse(config.settings.protocol+"://"+config.settings.domain, status_code=307)
+        # return {"status": "error", "message": "Invalid Token"}
+        return config.templates.TemplateResponse("reset-password.html", {"request": request, "status": "error", "message": "Invalid Token", "domain": config.settings.protocol+"://"+config.settings.domain})
+
+    if (datetime.now() - user_token.createdAt).days >= 1 or user_token.isExpire:
+        # return RedirectResponse(config.settings.protocol+"://"+config.settings.domain, status_code=307)
+        # return {"status": "error", "message": "Token expires"}
+        return config.templates.TemplateResponse("reset-password.html", {"request": request, "status": "error", "message": "Token expires", "domain": config.settings.protocol+"://"+config.settings.domain})
+    else:
+        return config.templates.TemplateResponse("reset-password.html", {"request": request, "status": "success"})
+
 @router.patch("/reset-password/{token}")
 def reset_password(data: CSchemas.ResetPassword, token: str = Path(max_length=24)):
     try:
@@ -98,6 +115,7 @@ def reset_password(data: CSchemas.ResetPassword, token: str = Path(max_length=24
         user.save()
         user_token.isExpire = True
         user_token.save()
+        # return RedirectResponse(config.settings.protocol+"://"+config.settings.domain, status_code=307)
         return {"status": "success", "message": "Password reset successfully"}
 
 @router.patch("/change-password")

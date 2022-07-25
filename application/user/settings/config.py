@@ -1,13 +1,15 @@
 from pydantic import BaseSettings
 from pathlib import Path
 from fastapi_mail import ConnectionConfig
+from fastapi.templating import Jinja2Templates
 
 delimiter = '/'
 static_dir_path = 'static/'
 class Settings(BaseSettings):
     app_name: str = "Fast API"
     admin_email: str = "aman@mistpl.com"
- 
+    domain: str = "127.0.0.1:8000"
+    protocol: str = "http"
     database_name: str
     user : str
     password : str
@@ -24,6 +26,8 @@ class Settings(BaseSettings):
         env_file = ".env"
 
 settings = Settings()
+
+templates = Jinja2Templates(directory="templates")
 
 conf = ConnectionConfig(
     MAIL_USERNAME = "amangupta1542@gmail.com",

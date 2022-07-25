@@ -29,8 +29,6 @@ app.add_middleware(
 app.mount("/api", user_root.app)
 app.mount("/admin", admin_root.app)
 
-app.mount("/staticfiles", StaticFiles(directory="staticfiles"), name="staticfiles")
-
 async def verify_username(request: Request) :
     token = None
     user = None
