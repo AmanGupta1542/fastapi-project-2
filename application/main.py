@@ -7,6 +7,7 @@ from application.user.routers.operations.user_crud import auth_user_staticfiles
 
 from .admin import main as admin_root
 from .user import main as user_root
+from .ftp import main as ftp_root
 app = FastAPI()
 
 token_auth_scheme = HTTPBearer()
@@ -28,6 +29,7 @@ app.add_middleware(
 
 app.mount("/api", user_root.app)
 app.mount("/admin", admin_root.app)
+app.mount("/ftp", ftp_root.app)
 
 app.mount("/staticfiles", StaticFiles(directory="staticfiles"), name="staticfiles")
 
